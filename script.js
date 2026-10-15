@@ -2,117 +2,30 @@ const WHATSAPP_NUMBER = "5493844546841";
 const MERCADO_PAGO = "https://link.mercadopago.com.ar/pirunet";
 
 const PRODUCTS = [
-  {
-    id: "netflix",
-    name: "Netflix Premium",
-    plan: "1 mes",
-    price: 11000,
-    category: "Películas y series",
-    icon: "N",
-    style: "netflix"
-  },
-  {
-    id: "disney-premium",
-    name: "Disney+ Premium",
-    plan: "1 mes",
-    price: 9500,
-    category: "Películas y series",
-    icon: "D+",
-    style: "disney"
-  },
-  {
-    id: "disney-estandar",
-    name: "Disney+ Estándar",
-    plan: "1 mes",
-    price: 7500,
-    category: "Películas y series",
-    icon: "D+",
-    style: "disney"
-  },
-  {
-    id: "hbo-1",
-    name: "HBO Max",
-    plan: "1 mes",
-    price: 5000,
-    category: "Películas y series",
-    icon: "H",
-    style: "hbo"
-  },
-  {
-    id: "hbo-2",
-    name: "HBO Max",
-    plan: "2 meses",
-    price: 6500,
-    category: "Películas y series",
-    icon: "H",
-    style: "hbo"
-  },
-  {
-    id: "hbo-3",
-    name: "HBO Max",
-    plan: "3 meses",
-    price: 8500,
-    category: "Películas y series",
-    icon: "H",
-    style: "hbo"
-  },
-  {
-    id: "prime",
-    name: "Prime Video",
-    plan: "1 mes",
-    price: 5000,
-    category: "Películas y series",
-    icon: "▶",
-    style: "prime"
-  },
-  {
-    id: "paramount",
-    name: "Paramount+",
-    plan: "1 mes",
-    price: 3500,
-    category: "Películas y series",
-    icon: "P+",
-    style: "paramount"
-  },
-  {
-    id: "vix",
-    name: "ViX",
-    plan: "1 mes",
-    price: 2500,
-    category: "Películas y series",
-    icon: "ViX",
-    style: "vix"
-  },
-  {
-    id: "youtube-individual",
-    name: "YouTube Premium",
-    plan: "Individual · 1 mes",
-    price: 6500,
-    category: "Video y música",
-    icon: "▶",
-    style: "youtube"
-  },
-  {
-    id: "youtube-familiar",
-    name: "YouTube Premium",
-    plan: "Familiar · 1 mes",
-    price: 10000,
-    category: "Video y música",
-    icon: "▶",
-    style: "youtube"
-  }
+  { id: "netflix", name: "Netflix Premium", plan: "1 mes", price: 11000, category: "Películas y series", icon: "N", style: "netflix" },
+  { id: "disney-premium", name: "Disney+ Premium", plan: "1 mes", price: 9500, category: "Películas y series", icon: "D+", style: "disney" },
+  { id: "disney-estandar", name: "Disney+ Estándar", plan: "1 mes", price: 7500, category: "Películas y series", icon: "D+", style: "disney" },
+  { id: "hbo-1", name: "HBO Max", plan: "1 mes", price: 5000, category: "Películas y series", icon: "H", style: "hbo" },
+  { id: "hbo-2", name: "HBO Max", plan: "2 meses", price: 6500, category: "Películas y series", icon: "H", style: "hbo" },
+  { id: "hbo-3", name: "HBO Max", plan: "3 meses", price: 8500, category: "Películas y series", icon: "H", style: "hbo" },
+  { id: "prime", name: "Prime Video", plan: "1 mes", price: 5000, category: "Películas y series", icon: "▶", style: "prime" },
+  { id: "paramount", name: "Paramount+", plan: "1 mes", price: 3500, category: "Películas y series", icon: "P+", style: "paramount" },
+  { id: "vix", name: "ViX", plan: "1 mes", price: 2500, category: "Películas y series", icon: "ViX", style: "vix" },
+  { id: "youtube-individual", name: "YouTube Premium", plan: "Individual · 1 mes", price: 6500, category: "Video y música", icon: "▶", style: "youtube" },
+  { id: "youtube-familiar", name: "YouTube Premium", plan: "Familiar · 1 mes", price: 10000, category: "Video y música", icon: "▶", style: "youtube" }
 ];
 
 let cart = [];
+let activeFilter = "Todos";
 
-const productsContainer = document.getElementById("products");
-const cartContainer = document.getElementById("cart-items");
+const productGrid = document.getElementById("product-grid");
 const cartCount = document.getElementById("cart-count");
+const cartItems = document.getElementById("cart-items");
 const cartTotal = document.getElementById("cart-total");
-const searchInput = document.getElementById("search");
-const categoryFilter = document.getElementById("category-filter");
-const checkoutForm = document.getElementById("checkout-form");
-const emptyCart = document.getElementById("empty-cart");
+const cartPanel = document.getElementById("cart-panel");
+const overlay = document.getElementById("overlay");
+const cartEmpty = document.getElementById("cart-empty");
+const toast = document.getElementById("toast");
 
 function formatPrice(price) {
   return new Intl.NumberFormat("es-AR", {
@@ -122,19 +35,29 @@ function formatPrice(price) {
   }).format(price);
 }
 
-function renderProducts(list = PRODUCTS) {
-  if (!productsContainer) return;
+function showToast(message) {
+  if (!toast) return;
 
-  if (list.length === 0) {
-    productsContainer.innerHTML = `
-      <div class="no-results">
-        No encontramos servicios con esa búsqueda.
-      </div>
-    `;
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
+}
+
+function renderProducts() {
+  if (!productGrid) {
+    console.error('No se encontró el elemento "product-grid".');
     return;
   }
 
-  productsContainer.innerHTML = list.map(product => `
+  const filteredProducts = PRODUCTS.filter(product =>
+    activeFilter === "Todos" || product.category === activeFilter
+  );
+
+  productGrid.innerHTML = filteredProducts.map(product => `
     <article class="product-card">
       <div class="product-icon ${product.style}">
         ${product.icon}
@@ -150,7 +73,6 @@ function renderProducts(list = PRODUCTS) {
         class="add-to-cart"
         type="button"
         data-add="${product.id}"
-        aria-label="Agregar ${product.name} al carrito"
       >
         Agregar
       </button>
@@ -158,19 +80,76 @@ function renderProducts(list = PRODUCTS) {
   `).join("");
 }
 
+function getCartProducts() {
+  return cart.map(item => {
+    const product = PRODUCTS.find(p => p.id === item.id);
+
+    if (!product) return null;
+
+    return {
+      ...product,
+      quantity: item.quantity,
+      subtotal: product.price * item.quantity
+    };
+  }).filter(Boolean);
+}
+
+function renderCart() {
+  const items = getCartProducts();
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+  if (cartCount) cartCount.textContent = totalQuantity;
+  if (cartTotal) cartTotal.textContent = formatPrice(total);
+
+  if (cartEmpty) {
+    cartEmpty.hidden = items.length > 0;
+  }
+
+  if (cartItems) {
+    cartItems.innerHTML = items.map(item => `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <strong>${item.name}</strong>
+          <small>${item.plan}</small>
+          <span>${formatPrice(item.subtotal)}</span>
+        </div>
+
+        <div class="quantity-controls">
+          <button type="button" data-decrease="${item.id}" aria-label="Restar">−</button>
+          <span>${item.quantity}</span>
+          <button type="button" data-increase="${item.id}" aria-label="Sumar">+</button>
+          <button type="button" class="remove-item" data-remove="${item.id}" aria-label="Eliminar">✕</button>
+        </div>
+      </div>
+    `).join("");
+  }
+}
+
 function addToCart(productId) {
-  const product = PRODUCTS.find(item => item.id === productId);
+  const product = PRODUCTS.find(p => p.id === productId);
   if (!product) return;
 
   const existing = cart.find(item => item.id === productId);
 
   if (existing) {
-    existing.quantity += 1;
+    existing.quantity++;
   } else {
-    cart.push({
-      id: product.id,
-      quantity: 1
-    });
+    cart.push({ id: productId, quantity: 1 });
+  }
+
+  renderCart();
+  showToast(`${product.name} agregado al carrito`);
+}
+
+function changeQuantity(productId, amount) {
+  const item = cart.find(p => p.id === productId);
+  if (!item) return;
+
+  item.quantity += amount;
+
+  if (item.quantity <= 0) {
+    cart = cart.filter(p => p.id !== productId);
   }
 
   renderCart();
@@ -179,147 +158,32 @@ function addToCart(productId) {
 function removeFromCart(productId) {
   cart = cart.filter(item => item.id !== productId);
   renderCart();
-}
-
-function changeQuantity(productId, change) {
-  const item = cart.find(entry => entry.id === productId);
-  if (!item) return;
-
-  item.quantity += change;
-
-  if (item.quantity <= 0) {
-    removeFromCart(productId);
-    return;
-  }
-
-  renderCart();
-}
-
-function getCartDetails() {
-  return cart.map(item => {
-    const product = PRODUCTS.find(entry => entry.id === item.id);
-
-    return {
-      ...product,
-      quantity: item.quantity,
-      subtotal: product.price * item.quantity
-    };
-  }).filter(item => item.id);
-}
-
-function renderCart() {
-  if (!cartContainer) return;
-
-  const items = getCartDetails();
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
-
-  if (cartCount) {
-    cartCount.textContent = totalItems;
-  }
-
-  if (cartTotal) {
-    cartTotal.textContent = formatPrice(total);
-  }
-
-  if (emptyCart) {
-    emptyCart.hidden = items.length > 0;
-  }
-
-  cartContainer.innerHTML = items.map(item => `
-    <div class="cart-item">
-      <div class="cart-item-info">
-        <strong>${item.name}</strong>
-        <small>${item.plan}</small>
-        <span>${formatPrice(item.subtotal)}</span>
-      </div>
-
-      <div class="quantity-controls">
-        <button
-          type="button"
-          data-decrease="${item.id}"
-          aria-label="Disminuir cantidad"
-        >−</button>
-
-        <span>${item.quantity}</span>
-
-        <button
-          type="button"
-          data-increase="${item.id}"
-          aria-label="Aumentar cantidad"
-        >+</button>
-
-        <button
-          type="button"
-          class="remove-item"
-          data-remove="${item.id}"
-          aria-label="Eliminar producto"
-        >✕</button>
-      </div>
-    </div>
-  `).join("");
-}
-
-function filterProducts() {
-  const searchTerm = searchInput
-    ? searchInput.value.trim().toLowerCase()
-    : "";
-
-  const category = categoryFilter
-    ? categoryFilter.value
-    : "all";
-
-  const filtered = PRODUCTS.filter(product => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm) ||
-      product.plan.toLowerCase().includes(searchTerm);
-
-    const matchesCategory =
-      category === "all" || product.category === category;
-
-    return matchesSearch && matchesCategory;
-  });
-
-  renderProducts(filtered);
+  showToast("Producto eliminado");
 }
 
 function openCart() {
-  const cartSection = document.getElementById("carrito");
+  if (!cartPanel || !overlay) return;
 
-  if (cartSection) {
-    cartSection.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }
+  cartPanel.classList.add("open");
+  cartPanel.setAttribute("aria-hidden", "false");
+  overlay.hidden = false;
+  document.body.classList.add("cart-open");
 }
 
-function buildWhatsAppMessage(customerName, customerPhone) {
-  const items = getCartDetails();
-  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+function closeCart() {
+  if (!cartPanel || !overlay) return;
 
-  const productLines = items.map(item =>
-    `• ${item.name} (${item.plan}) x${item.quantity} — ${formatPrice(item.subtotal)}`
-  );
-
-  return [
-    "🛍️ *NUEVO PEDIDO - PIRUNET STREAMING STORE*",
-    "",
-    `👤 Cliente: ${customerName}`,
-    `📱 WhatsApp: ${customerPhone}`,
-    "",
-    "📺 *Servicios solicitados:*",
-    ...productLines,
-    "",
-    `💰 *Total: ${formatPrice(total)}*`,
-    "",
-    "💳 Solicito instrucciones para completar el pago."
-  ].join("\n");
+  cartPanel.classList.remove("open");
+  cartPanel.setAttribute("aria-hidden", "true");
+  overlay.hidden = true;
+  document.body.classList.remove("cart-open");
 }
 
-function checkout() {
-  if (cart.length === 0) {
-    alert("Tu carrito está vacío. Agregá un servicio para continuar.");
+function sendOrder() {
+  const items = getCartProducts();
+
+  if (items.length === 0) {
+    showToast("Primero agregá un servicio al carrito");
     return;
   }
 
@@ -329,65 +193,75 @@ function checkout() {
   const customerName = nameInput ? nameInput.value.trim() : "";
   const customerPhone = phoneInput ? phoneInput.value.trim() : "";
 
-  if (!customerName || !customerPhone) {
-    alert("Completá tu nombre y tu WhatsApp para continuar.");
+  if (!customerName) {
+    showToast("Ingresá tu nombre para continuar");
+    if (nameInput) nameInput.focus();
     return;
   }
 
-  const message = buildWhatsAppMessage(customerName, customerPhone);
-  const whatsappUrl =
-    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
 
-  window.open(whatsappUrl, "_blank");
+  const lines = items.map(item =>
+    `• ${item.name} (${item.plan}) x${item.quantity}: ${formatPrice(item.subtotal)}`
+  );
+
+  const message = [
+    "🛍️ *PEDIDO NUEVO - PIRUNET STREAMING*",
+    "",
+    `👤 Cliente: ${customerName}`,
+    `📱 WhatsApp: ${customerPhone || "No indicado"}`,
+    "",
+    "📺 *Servicios solicitados:*",
+    ...lines,
+    "",
+    `💰 *TOTAL: ${formatPrice(total)}*`,
+    "",
+    "Hola, quiero confirmar este pedido. ¿Me indican cómo realizar el pago?"
+  ].join("\n");
+
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+  window.open(url, "_blank", "noopener");
 }
 
 document.addEventListener("click", event => {
   const addButton = event.target.closest("[data-add]");
-  const removeButton = event.target.closest("[data-remove]");
   const increaseButton = event.target.closest("[data-increase]");
   const decreaseButton = event.target.closest("[data-decrease]");
-  const cartButton = event.target.closest("[data-open-cart]");
-  const paymentButton = event.target.closest("[data-payment-link]");
+  const removeButton = event.target.closest("[data-remove]");
+  const filterButton = event.target.closest("[data-filter]");
 
-  if (addButton) {
-    addToCart(addButton.dataset.add);
-  }
+  if (addButton) addToCart(addButton.dataset.add);
 
-  if (removeButton) {
-    removeFromCart(removeButton.dataset.remove);
-  }
+  if (increaseButton) changeQuantity(increaseButton.dataset.increase, 1);
 
-  if (increaseButton) {
-    changeQuantity(increaseButton.dataset.increase, 1);
-  }
+  if (decreaseButton) changeQuantity(decreaseButton.dataset.decrease, -1);
 
-  if (decreaseButton) {
-    changeQuantity(decreaseButton.dataset.decrease, -1);
-  }
+  if (removeButton) removeFromCart(removeButton.dataset.remove);
 
-  if (cartButton) {
-    openCart();
-  }
+  if (filterButton) {
+    activeFilter = filterButton.dataset.filter;
 
-  if (paymentButton) {
-    window.open(MERCADO_PAGO, "_blank");
+    document.querySelectorAll("[data-filter]").forEach(button => {
+      button.classList.toggle("active", button === filterButton);
+    });
+
+    renderProducts();
   }
 });
 
-if (searchInput) {
-  searchInput.addEventListener("input", filterProducts);
-}
+document.getElementById("open-cart")?.addEventListener("click", openCart);
+document.getElementById("close-cart")?.addEventListener("click", closeCart);
+document.getElementById("send-order")?.addEventListener("click", sendOrder);
+overlay?.addEventListener("click", closeCart);
 
-if (categoryFilter) {
-  categoryFilter.addEventListener("change", filterProducts);
-}
+document.querySelector(".payment-btn")?.addEventListener("click", () => {
+  // El enlace de Mercado Pago se abre normalmente.
+});
 
-if (checkoutForm) {
-  checkoutForm.addEventListener("submit", event => {
-    event.preventDefault();
-    checkout();
-  });
-}
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeCart();
+});
 
 renderProducts();
 renderCart();
