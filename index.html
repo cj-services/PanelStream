@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b12">
+  <meta name="description" content="PiruNet Streaming: elegí tus plataformas favoritas y armá tu pedido.">
+  <title>PiruNet Streaming Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <a class="brand" href="#inicio">
+      <span class="brand-mark">P</span>
+      <span>Piru<span class="accent">Net</span>
+        <small>STREAMING STORE</small>
+      </span>
+    </a>
+    <button class="cart-shortcut" id="open-cart">
+      🛒 <span id="cart-count">0</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="hero" id="inicio">
+      <div class="eyebrow">● ENTRETENIMIENTO A TU ALCANCE</div>
+      <h1>Tus plataformas.<br><span>Un solo lugar.</span></h1>
+      <p>Películas, series y entretenimiento. Elegí tu servicio, agregalo al carrito y hacé tu pedido fácilmente.</p>
+      <a class="primary-btn" href="#catalogo">Ver servicios ↓</a>
+      <div class="hero-foot">
+        <span>✓ Atención personalizada</span>
+        <span>✓ Pedido rápido y sencillo</span>
+      </div>
+    </section>
+
+    <section class="catalog-section" id="catalogo">
+      <div class="section-heading">
+        <div>
+          <p class="kicker">NUESTRO CATÁLOGO</p>
+          <h2>Elegí lo que querés ver</h2>
+        </div>
+        <span class="catalog-count">11 opciones</span>
+      </div>
+
+      <div class="filters">
+        <button class="filter active" data-filter="Todos">Todos</button>
+        <button class="filter" data-filter="Películas y series">Películas y series</button>
+        <button class="filter" data-filter="Video y música">Video y música</button>
+      </div>
+
+      <div class="product-grid" id="product-grid"></div>
+    </section>
+
+    <section class="how">
+      <p class="kicker">SENCILLO Y RÁPIDO</p>
+      <h2>¿Cómo comprar?</h2>
+      <div class="steps">
+        <article>
+          <span>01</span>
+          <h3>Elegí tu servicio</h3>
+          <p>Agregá al carrito los planes que te interesan.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Revisá tu pedido</h3>
+          <p>Controlá las cantidades y el total a pagar.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Confirmá tu compra</h3>
+          <p>Mandá tu pedido por WhatsApp y coordiná el pago.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand footer-brand" href="#inicio">
+      <span class="brand-mark">P</span>
+      <span>Piru<span class="accent">Net</span><small>STREAMING STORE</small></span>
+    </a>
+    <p>Tu entretenimiento, en un solo lugar.</p>
+    <small>Las marcas mencionadas pertenecen a sus respectivos titulares.</small>
+  </footer>
+
+  <div class="overlay" id="overlay" hidden></div>
+
+  <aside class="cart-panel" id="cart-panel" aria-hidden="true">
+    <div class="cart-header">
+      <div>
+        <p class="kicker">TU PEDIDO</p>
+        <h2>Mi carrito</h2>
+      </div>
+      <button class="icon-btn" id="close-cart">✕</button>
+    </div>
+
+    <div class="cart-items" id="cart-items"></div>
+
+    <div class="cart-empty" id="cart-empty">
+      <span>🛍️</span>
+      <h3>Tu carrito está vacío</h3>
+      <p>Agregá un servicio para empezar tu pedido.</p>
+    </div>
+
+    <div class="cart-bottom">
+      <div class="total-line">
+        <span>Total del pedido</span>
+        <strong id="cart-total">$0</strong>
+      </div>
+
+      <label for="customer-name">Tu nombre</label>
+      <input id="customer-name" type="text" placeholder="¿Cómo te llamás?">
+
+      <label for="customer-phone">Tu WhatsApp (opcional)</label>
+      <input id="customer-phone" type="tel" placeholder="Tu número de contacto">
+
+      <button class="primary-btn full" id="send-order">
+        Confirmar por WhatsApp
+      </button>
+
+      <a class="payment-btn"
+         href="https://link.mercadopago.com.ar/pirunet"
+         target="_blank" rel="noopener">
+        Pagar con Mercado Pago ↗
+      </a>
+
+      <p class="payment-note">
+        El enlace de Mercado Pago es general. Revisá el total de tu pedido
+        y aboná el importe correcto. El pago no se verifica automáticamente
+        desde esta página.
+      </p>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
