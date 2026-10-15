@@ -6,7 +6,6 @@ const PRODUCTS = [
     id: "netflix",
     name: "Netflix Premium",
     plan: "1 mes",
-    provider: "Houseflix",
     price: 11000,
     category: "Películas y series",
     icon: "N",
@@ -16,7 +15,6 @@ const PRODUCTS = [
     id: "disney-premium",
     name: "Disney+ Premium",
     plan: "1 mes",
-    provider: "Houseflix",
     price: 9500,
     category: "Películas y series",
     icon: "D+",
@@ -26,7 +24,6 @@ const PRODUCTS = [
     id: "disney-estandar",
     name: "Disney+ Estándar",
     plan: "1 mes",
-    provider: "Houseflix",
     price: 7500,
     category: "Películas y series",
     icon: "D+",
@@ -36,7 +33,6 @@ const PRODUCTS = [
     id: "hbo-1",
     name: "HBO Max",
     plan: "1 mes",
-    provider: "JG Store",
     price: 5000,
     category: "Películas y series",
     icon: "H",
@@ -46,7 +42,6 @@ const PRODUCTS = [
     id: "hbo-2",
     name: "HBO Max",
     plan: "2 meses",
-    provider: "JG Store",
     price: 6500,
     category: "Películas y series",
     icon: "H",
@@ -56,7 +51,6 @@ const PRODUCTS = [
     id: "hbo-3",
     name: "HBO Max",
     plan: "3 meses",
-    provider: "JG Store",
     price: 8500,
     category: "Películas y series",
     icon: "H",
@@ -66,7 +60,6 @@ const PRODUCTS = [
     id: "prime",
     name: "Prime Video",
     plan: "1 mes",
-    provider: "JG Store",
     price: 5000,
     category: "Películas y series",
     icon: "▶",
@@ -76,7 +69,6 @@ const PRODUCTS = [
     id: "paramount",
     name: "Paramount+",
     plan: "1 mes",
-    provider: "JG Store",
     price: 3500,
     category: "Películas y series",
     icon: "P+",
@@ -86,7 +78,6 @@ const PRODUCTS = [
     id: "vix",
     name: "ViX",
     plan: "1 mes",
-    provider: "JG Store",
     price: 2500,
     category: "Películas y series",
     icon: "ViX",
@@ -96,7 +87,6 @@ const PRODUCTS = [
     id: "youtube-individual",
     name: "YouTube Premium",
     plan: "Individual · 1 mes",
-    provider: "JG Store",
     price: 6500,
     category: "Video y música",
     icon: "▶",
@@ -106,7 +96,6 @@ const PRODUCTS = [
     id: "youtube-familiar",
     name: "YouTube Premium",
     plan: "Familiar · 1 mes",
-    provider: "JG Store",
     price: 10000,
     category: "Video y música",
     icon: "▶",
@@ -114,252 +103,291 @@ const PRODUCTS = [
   }
 ];
 
-const cart = new Map();
+let cart = [];
 
-const grid = document.getElementById("product-grid");
-const panel = document.getElementById("cart-panel");
-const overlay = document.getElementById("overlay");
+const productsContainer = document.getElementById("products");
+const cartContainer = document.getElementById("cart-items");
+const cartCount = document.getElementById("cart-count");
+const cartTotal = document.getElementById("cart-total");
+const searchInput = document.getElementById("search");
+const categoryFilter = document.getElementById("category-filter");
+const checkoutForm = document.getElementById("checkout-form");
+const emptyCart = document.getElementById("empty-cart");
 
-const money = amount =>
-  "$" + amount.toLocaleString("es-AR");
+function formatPrice(price) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0
+  }).format(price);
+}
 
-let toastTimer;
+function renderProducts(list = PRODUCTS) {
+  if (!productsContainer) return;
 
-function renderProducts(filter = "Todos") {
-  const products = PRODUCTS.filter(product =>
-    filter === "Todos" || product.category === filter
-  );
+  if (list.length === 0) {
+    productsContainer.innerHTML = `
+      <div class="no-results">
+        No encontramos servicios con esa búsqueda.
+      </div>
+    `;
+    return;
+  }
 
-  grid.innerHTML = products.map(product => `
+  productsContainer.innerHTML = list.map(product => `
     <article class="product-card">
-      <div class="product-top">
-        <div class="platform-icon ${product.style}">
-          ${product.icon}
-        </div>
-
-        <div>
-          <div class="product-name">${product.name}</div>
-          <div class="provider">
-            ${product.plan} · ${product.provider}
-          </div>
-        </div>
+      <div class="product-icon ${product.style}">
+        ${product.icon}
       </div>
 
-      <p class="product-desc">
-        Acceso por ${product.plan}
-      </p>
-
-      <div class="price-row">
-        <div class="price">
-          ${money(product.price)}
-        </div>
-        <span class="available">Disponible</span>
+      <div class="product-info">
+        <h3>${product.name}</h3>
+        <div class="provider">${product.plan}</div>
+        <div class="product-price">${formatPrice(product.price)}</div>
       </div>
 
-      <button class="add-btn" data-add="${product.id}">
-        ＋ Agregar al carrito
+      <button
+        class="add-to-cart"
+        type="button"
+        data-add="${product.id}"
+        aria-label="Agregar ${product.name} al carrito"
+      >
+        Agregar
       </button>
     </article>
   `).join("");
 }
 
-function showToast(message) {
-  const toast = document.getElementById("toast");
-
-  toast.textContent = message;
-  toast.classList.add("show");
-
-  clearTimeout(toastTimer);
-
-  toastTimer = setTimeout(() => {
-    toast.classList.remove("show");
-  }, 2200);
-}
-
-function addToCart(id) {
-  const product = PRODUCTS.find(item => item.id === id);
-
+function addToCart(productId) {
+  const product = PRODUCTS.find(item => item.id === productId);
   if (!product) return;
 
-  const current = cart.get(id);
+  const existing = cart.find(item => item.id === productId);
 
-  cart.set(id, {
-    product,
-    qty: current ? current.qty + 1 : 1
-  });
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({
+      id: product.id,
+      quantity: 1
+    });
+  }
 
   renderCart();
-  showToast("¡Agregado al carrito!");
+}
+
+function removeFromCart(productId) {
+  cart = cart.filter(item => item.id !== productId);
+  renderCart();
+}
+
+function changeQuantity(productId, change) {
+  const item = cart.find(entry => entry.id === productId);
+  if (!item) return;
+
+  item.quantity += change;
+
+  if (item.quantity <= 0) {
+    removeFromCart(productId);
+    return;
+  }
+
+  renderCart();
+}
+
+function getCartDetails() {
+  return cart.map(item => {
+    const product = PRODUCTS.find(entry => entry.id === item.id);
+
+    return {
+      ...product,
+      quantity: item.quantity,
+      subtotal: product.price * item.quantity
+    };
+  }).filter(item => item.id);
 }
 
 function renderCart() {
-  const items = [...cart.values()];
+  if (!cartContainer) return;
 
-  const count = items.reduce(
-    (sum, item) => sum + item.qty, 0
-  );
+  const items = getCartDetails();
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
 
-  const total = items.reduce(
-    (sum, item) => sum + item.product.price * item.qty, 0
-  );
+  if (cartCount) {
+    cartCount.textContent = totalItems;
+  }
 
-  document.getElementById("cart-count").textContent = count;
-  document.getElementById("cart-total").textContent = money(total);
+  if (cartTotal) {
+    cartTotal.textContent = formatPrice(total);
+  }
 
-  document.getElementById("cart-empty").hidden =
-    items.length > 0;
+  if (emptyCart) {
+    emptyCart.hidden = items.length > 0;
+  }
 
-  document.getElementById("cart-items").innerHTML =
-    items.map(({ product, qty }) => `
-      <div class="cart-item">
-        <div>
-          <strong>${product.name}</strong>
-          <small>
-            ${product.plan} · ${product.provider}
-          </small>
-
-          <div class="item-controls">
-            <button class="qty-btn"
-              data-qty="${product.id}"
-              data-delta="-1">−</button>
-
-            <span>${qty}</span>
-
-            <button class="qty-btn"
-              data-qty="${product.id}"
-              data-delta="1">+</button>
-
-            <button class="remove-btn"
-              data-remove="${product.id}">
-              Eliminar
-            </button>
-          </div>
-        </div>
-
-        <div class="item-price">
-          ${money(product.price * qty)}
-        </div>
+  cartContainer.innerHTML = items.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <strong>${item.name}</strong>
+        <small>${item.plan}</small>
+        <span>${formatPrice(item.subtotal)}</span>
       </div>
-    `).join("");
+
+      <div class="quantity-controls">
+        <button
+          type="button"
+          data-decrease="${item.id}"
+          aria-label="Disminuir cantidad"
+        >−</button>
+
+        <span>${item.quantity}</span>
+
+        <button
+          type="button"
+          data-increase="${item.id}"
+          aria-label="Aumentar cantidad"
+        >+</button>
+
+        <button
+          type="button"
+          class="remove-item"
+          data-remove="${item.id}"
+          aria-label="Eliminar producto"
+        >✕</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function filterProducts() {
+  const searchTerm = searchInput
+    ? searchInput.value.trim().toLowerCase()
+    : "";
+
+  const category = categoryFilter
+    ? categoryFilter.value
+    : "all";
+
+  const filtered = PRODUCTS.filter(product => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm) ||
+      product.plan.toLowerCase().includes(searchTerm);
+
+    const matchesCategory =
+      category === "all" || product.category === category;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  renderProducts(filtered);
 }
 
 function openCart() {
-  panel.classList.add("open");
-  panel.setAttribute("aria-hidden", "false");
-  overlay.hidden = false;
-  document.body.style.overflow = "hidden";
+  const cartSection = document.getElementById("carrito");
+
+  if (cartSection) {
+    cartSection.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
 }
 
-function closeCart() {
-  panel.classList.remove("open");
-  panel.setAttribute("aria-hidden", "true");
-  overlay.hidden = true;
-  document.body.style.overflow = "";
+function buildWhatsAppMessage(customerName, customerPhone) {
+  const items = getCartDetails();
+  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+  const productLines = items.map(item =>
+    `• ${item.name} (${item.plan}) x${item.quantity} — ${formatPrice(item.subtotal)}`
+  );
+
+  return [
+    "🛍️ *NUEVO PEDIDO - PIRUNET STREAMING STORE*",
+    "",
+    `👤 Cliente: ${customerName}`,
+    `📱 WhatsApp: ${customerPhone}`,
+    "",
+    "📺 *Servicios solicitados:*",
+    ...productLines,
+    "",
+    `💰 *Total: ${formatPrice(total)}*`,
+    "",
+    "💳 Solicito instrucciones para completar el pago."
+  ].join("\n");
 }
 
-grid.addEventListener("click", event => {
-  const button = event.target.closest("[data-add]");
+function checkout() {
+  if (cart.length === 0) {
+    alert("Tu carrito está vacío. Agregá un servicio para continuar.");
+    return;
+  }
 
-  if (button) {
-    addToCart(button.dataset.add);
+  const nameInput = document.getElementById("customer-name");
+  const phoneInput = document.getElementById("customer-phone");
+
+  const customerName = nameInput ? nameInput.value.trim() : "";
+  const customerPhone = phoneInput ? phoneInput.value.trim() : "";
+
+  if (!customerName || !customerPhone) {
+    alert("Completá tu nombre y tu WhatsApp para continuar.");
+    return;
+  }
+
+  const message = buildWhatsAppMessage(customerName, customerPhone);
+  const whatsappUrl =
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+  window.open(whatsappUrl, "_blank");
+}
+
+document.addEventListener("click", event => {
+  const addButton = event.target.closest("[data-add]");
+  const removeButton = event.target.closest("[data-remove]");
+  const increaseButton = event.target.closest("[data-increase]");
+  const decreaseButton = event.target.closest("[data-decrease]");
+  const cartButton = event.target.closest("[data-open-cart]");
+  const paymentButton = event.target.closest("[data-payment-link]");
+
+  if (addButton) {
+    addToCart(addButton.dataset.add);
+  }
+
+  if (removeButton) {
+    removeFromCart(removeButton.dataset.remove);
+  }
+
+  if (increaseButton) {
+    changeQuantity(increaseButton.dataset.increase, 1);
+  }
+
+  if (decreaseButton) {
+    changeQuantity(decreaseButton.dataset.decrease, -1);
+  }
+
+  if (cartButton) {
+    openCart();
+  }
+
+  if (paymentButton) {
+    window.open(MERCADO_PAGO, "_blank");
   }
 });
 
-document.querySelectorAll(".filter").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".filter").forEach(item => {
-      item.classList.toggle("active", item === button);
-    });
+if (searchInput) {
+  searchInput.addEventListener("input", filterProducts);
+}
 
-    renderProducts(button.dataset.filter);
+if (categoryFilter) {
+  categoryFilter.addEventListener("change", filterProducts);
+}
+
+if (checkoutForm) {
+  checkoutForm.addEventListener("submit", event => {
+    event.preventDefault();
+    checkout();
   });
-});
-
-document.getElementById("open-cart")
-  .addEventListener("click", openCart);
-
-document.getElementById("close-cart")
-  .addEventListener("click", closeCart);
-
-overlay.addEventListener("click", closeCart);
-
-document.getElementById("cart-items")
-  .addEventListener("click", event => {
-    const quantityButton = event.target.closest("[data-qty]");
-    const removeButton = event.target.closest("[data-remove]");
-
-    if (removeButton) {
-      cart.delete(removeButton.dataset.remove);
-    }
-
-    if (quantityButton) {
-      const id = quantityButton.dataset.qty;
-      const item = cart.get(id);
-
-      if (item) {
-        item.qty += Number(quantityButton.dataset.delta);
-
-        if (item.qty <= 0) {
-          cart.delete(id);
-        }
-      }
-    }
-
-    renderCart();
-  });
-
-document.getElementById("send-order")
-  .addEventListener("click", () => {
-    const items = [...cart.values()];
-
-    if (items.length === 0) {
-      showToast("Agregá un servicio al carrito");
-      return;
-    }
-
-    const name = document
-      .getElementById("customer-name")
-      .value.trim();
-
-    const phone = document
-      .getElementById("customer-phone")
-      .value.trim();
-
-    if (!name) {
-      document.getElementById("customer-name").focus();
-      showToast("Escribí tu nombre para continuar");
-      return;
-    }
-
-    const total = items.reduce(
-      (sum, item) => sum + item.product.price * item.qty,
-      0
-    );
-
-    const lines = items.map(({ product, qty }) =>
-      `• ${product.name} (${product.plan}) x${qty} — ${money(product.price * qty)}`
-    );
-
-    const message = [
-      "¡Hola, PiruNet! Quiero hacer este pedido:",
-      "",
-      ...lines,
-      "",
-      `Total: ${money(total)}`,
-      `Nombre: ${name}`,
-      ...(phone ? [`WhatsApp: ${phone}`] : []),
-      "",
-      "¿Me indicás cómo continuar con el pago y la activación?"
-    ].join("\n");
-
-    const url =
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-
-    window.open(url, "_blank", "noopener");
-  });
-
-// El enlace de pago utiliza tu link general de Mercado Pago.
-document.querySelector(".payment-btn").href = MERCADO_PAGO;
+}
 
 renderProducts();
 renderCart();
